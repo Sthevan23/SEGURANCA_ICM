@@ -51,10 +51,14 @@ function generateEscala() {
     setTimeout(() => {
         const domingoTodos = document.getElementById('domingoTodos').checked;
         const routeSelect = document.getElementById('route-select');
-        const selectedRouteText = routeSelect.options[routeSelect.selectedIndex].text;
+        let selectedRouteText = "Ambulatório"; // default fallback
+        if (routeSelect) {
+            selectedRouteText = routeSelect.options[routeSelect.selectedIndex].text;
+        }
 
         // Update header subtitle with route
-        document.querySelector('header p').innerText = `Rota: ${selectedRouteText}`;
+        const subtitle = document.querySelector('header p');
+        if (subtitle) subtitle.innerText = `Rota: ${selectedRouteText}`;
 
         const escalaBody = document.getElementById('escalaBody');
         escalaBody.innerHTML = '';
@@ -70,9 +74,9 @@ function generateEscala() {
 
         days.forEach(day => {
             for (let hour = day.start; hour < day.hours; hour += 2) {
-                const startStr = hour.toString().padStart(2, '0') + ':00';
+                const startStr = hour + ':00';
                 const endHour = (hour + 2) % 24;
-                const endStr = endHour.toString().padStart(2, '0') + ':00';
+                const endStr = endHour + ':00';
 
                 let responsavel = '';
 
@@ -110,14 +114,27 @@ function copyEscala() {
         return;
     }
 
-    let text = 'ESCALA DE RONDAS\n\n';
+    const routeText = document.querySelector('header p') ? document.querySelector('header p').innerText : '';
+    let text = `ESCALA DE RONDAS - ${routeText}\n\n`;
+
     const rows = document.querySelectorAll('#escalaBody tr');
+    let currentDay = '';
 
     rows.forEach(row => {
         if (row.classList.contains('empty-state')) return;
         const cols = row.querySelectorAll('td');
         if (cols.length >= 3) {
-            text += `${cols[0].innerText.trim()} | ${cols[1].innerText.trim()} | ${cols[2].innerText.trim()}\n`;
+            const day = cols[0].innerText.trim().toUpperCase();
+            const time = cols[1].innerText.trim();
+            const name = cols[2].innerText.trim();
+
+            if (day !== currentDay) {
+                if (currentDay !== '') text += '\n'; // Add line break between days
+                text += `${day}\n\n`;
+                currentDay = day;
+            }
+
+            text += `${time} ${name}\n`;
         }
     });
 
