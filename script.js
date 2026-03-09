@@ -29,6 +29,7 @@ document.getElementById('generateBtn').addEventListener('click', generateEscala)
 document.getElementById('copyBtn').addEventListener('click', copyEscala);
 document.getElementById('printBtn').addEventListener('click', () => window.print());
 document.getElementById('pdfBtn').addEventListener('click', exportPDF);
+document.getElementById('shareBtn').addEventListener('click', sharePDF);
 
 function generateEscala() {
     const namesText = document.getElementById('names').value.trim();
@@ -183,5 +184,60 @@ function exportPDF() {
     showToast('Gerando PDF...', 'info');
     html2pdf().set(opt).from(pdfContent).save().then(() => {
         showToast('PDF exportado com sucesso!', 'success');
+    });
+}
+
+function sharePDF() {
+    const table = document.getElementById('escalaTable');
+    if (!table || document.querySelectorAll('#escalaBody tr.row-animate').length === 0) {
+        showToast('Gere a escala primeiro antes de compartilhar!', 'error');
+        return;
+    }
+
+    const element = document.getElementById('tableContainer');
+    const title = document.querySelector('header h1').innerText;
+    const subtitle = document.querySelector('header p').innerText;
+
+    const pdfContent = document.createElement('div');
+    pdfContent.style.padding = '30px';
+    pdfContent.style.fontFamily = "'Outfit', sans-serif";
+    pdfContent.innerHTML = `
+        <div style="text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #e2e8f0;">
+            <h1 style="color: #0f172a; margin-bottom: 8px; font-size: 28px;">${title}</h1>
+            <p style="color: #64748b; font-size: 16px;">${subtitle}</p>
+        </div>
+        ${element.innerHTML}
+    `;
+
+    const cells = pdfContent.querySelectorAll('.time-cell i');
+    cells.forEach(c => c.remove());
+
+    const opt = {
+        margin: [0.5, 0.5],
+        filename: 'escala-ronda.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+    };
+
+    showToast('Gerando arquivo para o WhatsApp...', 'info');
+
+    html2pdf().set(opt).from(pdfContent).outputPdf('blob').then((pdfBlob) => {
+        const file = new File([pdfBlob], "escala-ronda.pdf", { type: 'application/pdf' });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            navigator.share({
+                title: 'Escala de Rondas',
+                text: 'Segue a escala de rondas gerada em formato PDF.',
+                files: [file]
+            }).then(() => {
+                showToast('Compartilhado com sucesso!', 'success');
+            }).catch((err) => {
+                console.error('Erro ao compartilhar:', err);
+            });
+        } else {
+            showToast('Compartilhamento de arquivo não suportado neste dispositivo. O PDF será baixado.', 'warning');
+            html2pdf().set(opt).from(pdfContent).save();
+        }
     });
 }
