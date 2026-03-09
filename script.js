@@ -129,7 +129,7 @@ function copyEscala() {
             const name = cols[2].innerText.trim();
 
             if (day !== currentDay) {
-                if (currentDay !== '') text += '\n'; // Add line break between days
+                if (currentDay !== '') text += '\n\n'; // Duas quebras de linha reais para pular espaço entre dias
                 text += `${day}\n\n`;
                 currentDay = day;
             }
